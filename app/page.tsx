@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 /**
  * @license
@@ -365,6 +365,18 @@ export default function App() {
   const [plansTab, setPlansTab] = useState<'mine' | 'public'>('mine');
   const [isPedagogyModalOpen, setIsPedagogyModalOpen] = useState(false);
   const [unsharingPlanId, setUnsharingPlanId] = useState<string | null>(null);
+  const [sessionGenerations, setSessionGenerations] = useState(0);
+
+  const checkSessionQuota = () => {
+    if (userProfile?.isUnlimited) return true;
+    return sessionGenerations < 5;
+  };
+
+  const incrementSessionQuota = () => {
+    if (!userProfile?.isUnlimited) {
+      setSessionGenerations(prev => prev + 1);
+    }
+  };
 
   const checkWeeklyQuota = () => {
     if (userProfile?.isUnlimited) return true;
@@ -598,6 +610,7 @@ export default function App() {
       katzir: { activity: '', tools: '', suggestions: [], details: '', differentiation: '' }
     });
     setActiveTab('harish');
+    setSessionGenerations(0);
     setCurrentStep('setup');
     setErrorMsg('');
   };
@@ -654,6 +667,7 @@ export default function App() {
     setPlanData(plan.planData);
     setCurrentStep('editor');
     setIsSavedPlansModalOpen(false);
+    setSessionGenerations(0);
   };
 
   const deletePlan = async (id: string, e: React.MouseEvent) => {
@@ -699,6 +713,11 @@ export default function App() {
       return;
     }
 
+    if (!checkSessionQuota()) {
+      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setTimeout(() => setErrorMsg(''), 6000);
+      return;
+    }
 
     if (!lessonDetails.topic || !lessonDetails.subject || !lessonDetails.ageGroup) {
       setErrorMsg("אנא מלא מקצוע, נושא ושכבת גיל כדי לייצר מערך.");
@@ -753,10 +772,12 @@ export default function App() {
           katzir: { activity: generatedData.katzir?.[0]?.activity || '', tools: generatedData.katzir?.[0]?.tools || '', suggestions: (generatedData.katzir || []).map((s:any) => ({...s, differentiation: s.differentiation || ''})), details: '', differentiation: generatedData.katzir?.[0]?.differentiation || '' }
         });
         setActiveTab('harish');
+    setSessionGenerations(0);
         setCurrentStep('editor');
       } else {
         throw new Error("לא התקבלה תשובה מה-AI.");
       }
+      incrementSessionQuota();
     } catch (error: any) {
       console.error("Error:", error);
       setErrorMsg(getErrorMessage(error));
@@ -772,6 +793,11 @@ export default function App() {
       return;
     }
 
+    if (!checkSessionQuota()) {
+      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setTimeout(() => setErrorMsg(''), 6000);
+      return;
+    }
 
     if (!lessonDetails.topic || !lessonDetails.subject || !lessonDetails.ageGroup) {
       setErrorMsg("כדי לקבל הצעות מדויקות, מלא קודם את נושא השיעור, המקצוע והכיתה במסך 'פרטי השיעור'.");
@@ -822,6 +848,7 @@ export default function App() {
             details: '' 
           }
         }));
+        incrementSessionQuota();
       }
     } catch (error) {
       console.error("Error:", error);
@@ -832,6 +859,11 @@ export default function App() {
   };
 
   const generateActivityDetailsAI = async (phaseId: string) => {
+    if (!checkSessionQuota()) {
+      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setTimeout(() => setErrorMsg(''), 6000);
+      return;
+    }
     const activity = (planData as any)[phaseId].activity;
     if (!activity) {
       setErrorMsg("אנא כתוב או בחר פעילות לפני בקשת הסבר.");
@@ -864,6 +896,7 @@ export default function App() {
       if (jsonText) {
         const generatedData = JSON.parse(jsonText);
         handlePlanChange(phaseId, 'details', generatedData.details);
+        incrementSessionQuota();
       }
     } catch (error) {
       console.error("Error:", error);
@@ -874,6 +907,11 @@ export default function App() {
   };
 
   const generateDifferentiationAI = async (phaseId: string) => {
+    if (!checkSessionQuota()) {
+      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setTimeout(() => setErrorMsg(''), 6000);
+      return;
+    }
     const activity = (planData as any)[phaseId].activity;
     if (!activity) {
       setErrorMsg("אנא כתוב או בחר פעילות לפני בקשת התאמה.");
@@ -908,6 +946,7 @@ export default function App() {
       if (jsonText) {
         const generatedData = JSON.parse(jsonText);
         handlePlanChange(phaseId, 'differentiation', generatedData.differentiation);
+        incrementSessionQuota();
       }
     } catch (error) {
       console.error("Error:", error);
@@ -946,6 +985,11 @@ export default function App() {
 
   // ייצור מצגת PowerPoint (PPTX) אמתית
   const generateSlideConceptsAI = async () => {
+    if (!checkSessionQuota()) {
+      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setTimeout(() => setErrorMsg(''), 6000);
+      return;
+    }
     if (!lessonDetails.topic) {
       setErrorMsg("אנא מלאו את נושא השיעור כדי לקבל הצעות.");
       return;
@@ -968,6 +1012,7 @@ export default function App() {
           ...prev,
           slideTopics: prev.slideTopics ? `${prev.slideTopics}, ${concepts}` : concepts
         }));
+        incrementSessionQuota();
       }
     } catch (error: any) {
       console.error("Concepts Error:", error);
@@ -978,6 +1023,12 @@ export default function App() {
   };
 
   const generatePresentationPptx = async () => {
+    if (!checkSessionQuota()) {
+      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setTimeout(() => setErrorMsg(''), 6000);
+      return;
+    }
+
     if (!isLibsReady || !(window as any).PptxGenJS) {
       setErrorMsg("מערכת ייצור המצגות עדיין נטענת... נסה שוב בעוד רגע.");
       setTimeout(() => setErrorMsg(''), 4000);

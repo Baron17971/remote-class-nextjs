@@ -227,3 +227,20 @@ export const removePlan = async (planId: string, accessToken: string) => {
   );
 };
 
+export const updatePlanVisibility = async (
+  planId: string,
+  isPublic: boolean,
+  accessToken: string,
+) => {
+  const params = new URLSearchParams();
+  params.set("id", `eq.${planId}`);
+  return request<any[]>(
+    `/rest/v1/plans?${params.toString()}`,
+    {
+      method: "PATCH",
+      headers: { Prefer: "return=representation" },
+      body: JSON.stringify({ is_public: isPublic }),
+    },
+    accessToken,
+  );
+};

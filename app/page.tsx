@@ -18,6 +18,7 @@ import {
   signInWithPassword,
   signOutSession,
   signUpWithPassword,
+  updatePlanVisibility,
   updateUserMetadata,
 } from './lib/supabaseRest';
 import homeBg from './assets/home_bg.png';
@@ -95,6 +96,12 @@ const PHASES = {
     toolsPlaceholder: 'לדוגמה: Padlet, Google Slides, Linoit',
     icon: Wheat
   }
+};
+
+const PHASE_TITLE_LIGHT_COLORS: Record<string, string> = {
+  harish: '#8FA7E6',
+  zria: '#7C8A6D',
+  katzir: '#CCA1C6'
 };
 
 const SUBJECTS = [
@@ -357,6 +364,7 @@ export default function App() {
   const [isPlansLoading, setIsPlansLoading] = useState(false);
   const [plansTab, setPlansTab] = useState<'mine' | 'public'>('mine');
   const [isPedagogyModalOpen, setIsPedagogyModalOpen] = useState(false);
+  const [unsharingPlanId, setUnsharingPlanId] = useState<string | null>(null);
 
   const checkWeeklyQuota = () => {
     if (userProfile?.isUnlimited) return true;
@@ -433,6 +441,18 @@ export default function App() {
     zria: { activity: '', tools: '', suggestions: [] as any[], details: '', differentiation: '' },
     katzir: { activity: '', tools: '', suggestions: [] as any[], details: '', differentiation: '' }
   });
+
+  const activePhaseTitleColor = PHASE_TITLE_LIGHT_COLORS[activeTab] || '#7C8A6D';
+
+  const hasLastPlan = (Object.values(planData) as any[]).some((phase) =>
+    Boolean(
+      phase.activity?.trim() ||
+      phase.tools?.trim() ||
+      phase.details?.trim() ||
+      phase.differentiation?.trim() ||
+      (Array.isArray(phase.suggestions) && phase.suggestions.length > 0)
+    )
+  );
 
   useEffect(() => {
     // Plans are loaded from Supabase only (no plan persistence in localStorage).
@@ -894,6 +914,33 @@ export default function App() {
       setErrorMsg(getErrorMessage(error));
     } finally {
       setIsDiffLoading(false);
+    }
+  };
+
+  const unsharePlan = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const planToUnshare = savedPlans.find(p => p.id === id);
+    if (!planToUnshare) return;
+    if (!planToUnshare.is_public) return;
+
+    if (planToUnshare.user_id !== userProfile?.id) {
+      alert('אין לך הרשאה להסיר שיתוף של מערך שאינו שלך.');
+      return;
+    }
+
+    try {
+      if (!accessToken) throw new Error('Missing auth session');
+      setUnsharingPlanId(id);
+      await updatePlanVisibility(id, false, accessToken);
+      setSavedPlans(prev => prev.map(p => (p.id === id ? { ...p, is_public: false } : p)));
+      setSuccessMsg('המערך הוסר משיתוף ציבורי.');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err: any) {
+      console.error('Error unsharing plan:', err);
+      setErrorMsg('שגיאה בהסרת השיתוף: ' + err.message);
+      setTimeout(() => setErrorMsg(''), 3000);
+    } finally {
+      setUnsharingPlanId(null);
     }
   };
 
@@ -1483,31 +1530,12 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
 
         {/* Center: Brand */}
         <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none sm:pointer-events-auto">
-          <h1 className="text-2xl font-bold text-white font-serif tracking-tight leading-none">מודל חז"ק להוראה</h1>
+          <h1 className="text-2xl font-bold text-white font-serif tracking-tight leading-none">מודל חז"ק להוראה מרחוק</h1>
           <p className="text-sm text-lilac-100 font-bold uppercase tracking-widest mt-2 hidden sm:block text-center">נוצר ע"י ענת ברון לוביש</p>
         </div>
 
         {/* Right: Actions & Profile */}
         <div className="flex items-center gap-2.5">
-          {/* Step Nav */}
-          <div className="flex items-center gap-1.5 bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-md">
-            <button 
-              onClick={() => setCurrentStep('setup')}
-              className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${currentStep === 'setup' ? 'bg-lilac-500 text-white shadow-md' : 'text-slate-400 hover:text-white'}`}
-            >
-              הגדרות
-            </button>
-            <button 
-              onClick={() => setCurrentStep('editor')}
-              disabled={!lessonDetails.subject || !lessonDetails.topic}
-              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all ${currentStep === 'editor' ? 'bg-lilac-500 text-white shadow-md' : 'text-slate-400 hover:text-white'} disabled:opacity-30`}
-            >
-              תכנון
-            </button>
-          </div>
-
-          <div className="w-px h-5 bg-white/10 mx-1 hidden md:block"></div>
-
           {/* Consolidated Actions Dropdown */}
           <div className="relative">
             <button 
@@ -1665,8 +1693,18 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
         {currentStep === 'setup' ? (
           /* STEP 1: SETUP */
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {hasLastPlan && (
+              <div className="flex justify-start">
+                <button
+                  onClick={() => setCurrentStep('editor')}
+                  className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-slate-200 font-semibold transition-all"
+                >
+                  חזרה לתכנון <ArrowLeft size={18} />
+                </button>
+              </div>
+            )}
             <div className="text-center space-y-4">
-              <h2 className="text-4xl font-semibold text-white font-serif tracking-tight">הגדרות <span className="text-lilac-300 italic">השיעור</span></h2>
+              <h2 className="text-4xl font-semibold text-white font-serif tracking-tight">הגדרות <span className="text-lilac-300">השיעור</span></h2>
               <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed font-medium">
                 הגדירו את הבסיס לשיעור שלכם והעלו חומרי עזר. ה-AI ישתמש במידע זה כדי לבנות מערך שיעור מותאם אישית.
               </p>
@@ -1796,7 +1834,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
             {/* Intro & Cards Selection */}
             <div className="text-center space-y-8">
               <div className="space-y-4">
-                <h2 className="text-4xl font-semibold text-white font-serif tracking-tight">תכנון שיעור <span className="text-sage-green italic">חז״ק</span></h2>
+                <h2 className="text-4xl font-semibold text-white font-serif tracking-tight">תכנון שיעור <span className="transition-colors duration-300" style={{ color: activePhaseTitleColor }}>חז״ק</span></h2>
                 <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed font-medium">
                   מודל חז״ק נועד להפוך את הלמידה מרחוק מפאסיבית לפעילה. 
                   שלושת השלבים מבטיחים מעורבות מתמדת של התלמידים.
@@ -2351,39 +2389,58 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                       {plansTab === 'mine' && <p className="text-sm opacity-60 mt-2">צרו מערך ושמרו אותו כדי לראות אותו כאן.</p>}
                     </div>
                   ) : (
-                    <div className="grid gap-5">
+                    <div className="grid gap-3">
                       {savedPlans.filter(p => plansTab === 'mine' ? p.user_id === userProfile?.id : p.is_public).map(plan => (
-                        <div key={plan.id} onClick={() => loadPlan(plan)} className="relative group bg-white/5 p-6 rounded-[2rem] border border-white/10 hover:border-lilac-400 shadow-sm hover:shadow-2xl hover:shadow-lilac-500/10 cursor-pointer transition-all flex justify-between items-center overflow-hidden">
+                        <div key={plan.id} onClick={() => loadPlan(plan)} className="relative group bg-white/5 p-4 rounded-[1.6rem] border border-white/10 hover:border-lilac-400 shadow-sm hover:shadow-2xl hover:shadow-lilac-500/10 cursor-pointer transition-all flex justify-between items-center overflow-hidden">
                           {plan.is_public && plansTab === 'mine' && (
-                            <div className="absolute top-0 left-0 bg-sage-green/20 text-sage-green px-3 py-1 rounded-br-2xl text-[10px] font-bold border-b border-r border-sage-green/20">
+                            <div className="absolute top-0 left-0 bg-sage-green/20 text-white px-3 py-1 rounded-br-2xl text-[10px] font-bold border-b border-r border-sage-green/20">
                               שיתוף ציבורי פעיל
                             </div>
                           )}
-                          <div className="flex items-center gap-5">
-                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${plansTab === 'mine' ? 'bg-lilac-500/10 text-lilac-300' : 'bg-sage-green/10 text-sage-green'}`}>
-                                {plansTab === 'mine' ? <FileText size={28} /> : <Users size={28} />}
+                          <div className="flex items-center gap-3">
+                             <div className={`w-11 h-11 rounded-xl flex items-center justify-center shadow-inner ${plansTab === 'mine' ? 'bg-lilac-500/10 text-lilac-300' : 'bg-sage-green/10 text-sage-green'}`}>
+                                {plansTab === 'mine' ? <FileText size={22} /> : <Users size={22} />}
                              </div>
-                             <div>
-                                <h3 className="font-bold text-xl text-white group-hover:text-lilac-300 transition-colors">{plan.lessonDetails.topic}</h3>
-                                <div className="flex items-center gap-3 mt-1.5">
-                                   <span className="text-xs font-bold text-slate-400 border border-white/5 bg-white/5 py-1 px-2.5 rounded-lg">{plan.lessonDetails.subject}</span>
-                                   <span className="text-xs font-bold text-slate-400 border border-white/5 bg-white/5 py-1 px-2.5 rounded-lg">{plan.lessonDetails.ageGroup}</span>
+                              <div>
+                                <h3 className="font-bold text-lg text-white group-hover:text-lilac-300 transition-colors">{plan.lessonDetails.topic}</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                   <span className="text-xs font-bold text-slate-400 border border-white/5 bg-white/5 py-0.5 px-2 rounded-lg">{plan.lessonDetails.subject}</span>
+                                   <span className="text-xs font-bold text-slate-400 border border-white/5 bg-white/5 py-0.5 px-2 rounded-lg">{plan.lessonDetails.ageGroup}</span>
                                    <span className="text-[10px] font-medium text-slate-500 flex items-center gap-1"><Clock size={10} /> {plan.date}</span>
                                 </div>
                              </div>
                           </div>
                           
                           {plansTab === 'mine' && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                deletePlan(plan.id, e);
-                              }} 
-                              className="p-3 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-2xl transition-all shadow-sm" 
-                              title="מחק מערך"
-                            >
-                              <Trash2 size={22} />
-                            </button>
+                            <div className="flex items-center gap-2">
+                              {plan.is_public && (
+                                <button
+                                  onClick={(e) => unsharePlan(plan.id, e)}
+                                  disabled={unsharingPlanId === plan.id}
+                                  className="px-3 py-2 text-xs font-bold text-white bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl transition-all disabled:opacity-60"
+                                  title="הסר משיתוף ציבורי"
+                                >
+                                  {unsharingPlanId === plan.id ? (
+                                    <span className="inline-flex items-center gap-1">
+                                      <Loader2 size={12} className="animate-spin" />
+                                      מסיר...
+                                    </span>
+                                  ) : (
+                                    'הסר משיתוף'
+                                  )}
+                                </button>
+                              )}
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deletePlan(plan.id, e);
+                                }} 
+                                className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all shadow-sm" 
+                                title="מחק מערך"
+                              >
+                                <Trash2 size={20} />
+                              </button>
+                            </div>
                           )}
                         </div>
                       ))}

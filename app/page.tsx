@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 /**
  * @license
@@ -10,7 +10,16 @@ import { Sprout, BookOpen, Wheat, Sparkles, Download, FileEdit, CheckCircle2, Al
 import { GoogleGenAI, Type } from "@google/genai";
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import supabase from './lib/supabaseClient';
+import {
+  insertPlan,
+  listPlans,
+  removePlan,
+  restoreSession,
+  signInWithPassword,
+  signOutSession,
+  signUpWithPassword,
+  updateUserMetadata,
+} from './lib/supabaseRest';
 import homeBg from './assets/home_bg.png';
 
 // Initialize Gemini AI
@@ -333,6 +342,7 @@ export default function App() {
   });
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [authInput, setAuthInput] = useState({ name: '', email: '', password: '' });
   const [authMode, setAuthMode] = useState('login');
@@ -362,30 +372,23 @@ export default function App() {
     return weeklyPlans.length < 3;
   };
 
-  const fetchPlans = async (targetUserId?: string) => {
+  const fetchPlans = async (targetUserId?: string, token?: string) => {
     const userId = targetUserId || userProfile?.id;
-    if (!userId) { return; }
+    const authToken = token || accessToken;
+    if (!userId || !authToken) { return; }
     setIsPlansLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('plans')
-        .select('*')
-        .or(`user_id.eq.${userId},is_public.eq.true`)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      if (data) {
-        const transformedPlans: SavedPlan[] = data.map(p => ({
-          id: p.id,
-          user_id: p.user_id,
-          is_public: p.is_public,
-          date: p.date,
-          lessonDetails: p.lesson_details,
-          planData: p.plan_data,
-          advancedOptions: p.advanced_options
-        }));
-        setSavedPlans(transformedPlans);
-      }
+      const data = await listPlans(userId, authToken);
+      const transformedPlans: SavedPlan[] = data.map(p => ({
+        id: p.id,
+        user_id: p.user_id,
+        is_public: p.is_public,
+        date: p.date,
+        lessonDetails: p.lesson_details,
+        planData: p.plan_data,
+        advancedOptions: p.advanced_options
+      }));
+      setSavedPlans(transformedPlans);
     } catch (err: any) {
       console.error('Error fetching plans:', err);
     } finally {
@@ -398,10 +401,8 @@ export default function App() {
   const applyPromoCode = async (code: string) => {
     if (code.trim() === 'REMOTE-VIP-2024') {
       try {
-        const { error } = await supabase.auth.updateUser({
-          data: { is_unlimited: true }
-        });
-        if (error) throw error;
+        if (!accessToken) throw new Error('Missing auth session');
+        await updateUserMetadata(accessToken, { is_unlimited: true });
         
         setUserProfile(prev => prev ? { ...prev, isUnlimited: true } : null);
         setSuccessMsg('קוד הופעל בהצלחה! יש לך כעת גישה ללא הגבלה. ✨');
@@ -435,28 +436,19 @@ export default function App() {
 
   useEffect(() => {
     // Plans are loaded from Supabase only (no plan persistence in localStorage).
-
-
-    // Supabase session restore
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    restoreSession().then((session) => {
       if (session?.user) {
-        const name = session.user.user_metadata?.full_name || session.user.email || 'משתמש';
+        const fullName = typeof session.user.user_metadata?.full_name === 'string' ? session.user.user_metadata.full_name : '';
+        const email = typeof session.user.email === 'string' ? session.user.email : undefined;
+        const name = fullName || email || 'משתמש';
         const isUnlimited = !!session.user.user_metadata?.is_unlimited;
-        setUserProfile({ id: session.user.id, name, email: session.user.email, isUnlimited });
+        setAccessToken(session.accessToken);
+        setUserProfile({ id: session.user.id, name, email, isUnlimited });
         setIsAuthenticated(true);
         setCurrentStep('setup');
-        fetchPlans(session.user.id);
-      }
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const name = session.user.user_metadata?.full_name || session.user.email || 'משתמש';
-        const isUnlimited = !!session.user.user_metadata?.is_unlimited;
-        setUserProfile({ id: session.user.id, name, email: session.user.email, isUnlimited });
-        setIsAuthenticated(true);
-        fetchPlans(session.user.id);
+        fetchPlans(session.user.id, session.accessToken);
       } else {
+        setAccessToken(null);
         setUserProfile(null);
         setIsAuthenticated(false);
         setSavedPlans([]);
@@ -486,7 +478,6 @@ export default function App() {
       });
     });
 
-    return () => subscription.unsubscribe();
   }, []);
 
   const handleDetailsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -599,7 +590,7 @@ export default function App() {
       return;
     }
     
-    if (!isAuthenticated || !userProfile) {
+    if (!isAuthenticated || !userProfile || !accessToken) {
       setErrorMsg('יש להתחבר כדי לשמור מערכים בענן');
       return;
     }
@@ -608,7 +599,7 @@ export default function App() {
     const dateStr = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     
     try {
-      const { error } = await supabase.from('plans').insert({
+      await insertPlan({
         id: planId,
         user_id: userProfile.id,
         is_public: isPublic,
@@ -616,9 +607,7 @@ export default function App() {
         plan_data: planData,
         advanced_options: advancedOptions,
         date: dateStr
-      });
-
-      if (error) throw error;
+      }, accessToken);
       
       const newPlan: SavedPlan = {
         id: planId,
@@ -630,7 +619,7 @@ export default function App() {
         advancedOptions
       };
       
-      setSavedPlans([newPlan, ...savedPlans]);
+      setSavedPlans(prev => [newPlan, ...prev]);
       setSuccessMsg(isPublic ? 'המערך נשמר ושותף בקהילה! 🌐' : 'המערך נשמר כפרטי בהצלחה! 🔒');
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (err: any) {
@@ -659,9 +648,9 @@ export default function App() {
 
     if (window.confirm('האם אתה בטוח שברצונך למחוק מערך זה? המחיקה היא לצמיתות.')) {
       try {
-        const { error } = await supabase.from('plans').delete().eq('id', id);
-        if (error) throw error;
-        setSavedPlans(savedPlans.filter(p => p.id !== id));
+        if (!accessToken) throw new Error('Missing auth session');
+        await removePlan(id, accessToken);
+        setSavedPlans(prev => prev.filter(p => p.id !== id));
       } catch (err: any) {
         console.error('Error deleting plan:', err);
         alert('שגיאה במחיקה: ' + err.message);
@@ -715,7 +704,7 @@ export default function App() {
 
     try {
       if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-        throw new Error("מפתח API חסר. אנא ודא שהגדרת את GEMINI_API_KEY.");
+        throw new Error("מפתח API חסר. אנא ודא שהגדרת את NEXT_PUBLIC_GEMINI_API_KEY.");
       }
 
       const response = await genAI.models.generateContent({
@@ -1359,19 +1348,18 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                     try {
                       if (authMode === 'signup') {
                         if (!authInput.name.trim()) { setAuthError('יש להזין שם מלא'); setAuthLoading(false); return; }
-                        const { error } = await supabase.auth.signUp({
-                          email: authInput.email,
-                          password: authInput.password,
-                          options: { data: { full_name: authInput.name.trim() } }
-                        });
-                        if (error) throw error;
+                        await signUpWithPassword(authInput.email, authInput.password, authInput.name.trim());
                         setAuthError('נשלח אימות לאימייל שלך! אשר ואז היכנס.');
                       } else {
-                        const { error } = await supabase.auth.signInWithPassword({
-                          email: authInput.email,
-                          password: authInput.password,
-                        });
-                        if (error) throw error;
+                        const session = await signInWithPassword(authInput.email, authInput.password);
+                        const fullName = typeof session.user.user_metadata?.full_name === 'string' ? session.user.user_metadata.full_name : '';
+                        const email = typeof session.user.email === 'string' ? session.user.email : undefined;
+                        const name = fullName || email || 'משתמש';
+                        const isUnlimited = !!session.user.user_metadata?.is_unlimited;
+                        setAccessToken(session.accessToken);
+                        setUserProfile({ id: session.user.id, name, email, isUnlimited });
+                        setIsAuthenticated(true);
+                        fetchPlans(session.user.id, session.accessToken);
                         setCurrentStep('setup');
                       }
                     } catch (err: any) {
@@ -1583,7 +1571,16 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                 <span className="text-sm font-bold text-slate-200 hidden lg:block">{userProfile.name}</span>
               </button>
               
-              <button onClick={async () => { await supabase.auth.signOut(); }} title="יציאה"
+              <button
+                onClick={async () => {
+                  await signOutSession(accessToken);
+                  setAccessToken(null);
+                  setUserProfile(null);
+                  setIsAuthenticated(false);
+                  setSavedPlans([]);
+                  setCurrentStep('home');
+                }}
+                title="יציאה"
                 className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all">
                 <LogOut size={16} />
               </button>
@@ -2406,4 +2403,3 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
     </div>
   );
 }
-

@@ -1521,7 +1521,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
 
             {showActionsMenu && (
               <>
-                <div className="absolute top-full mt-3 left-0 w-64 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full mt-3 right-0 w-64 bg-slate-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-2 z-[60] animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-3 py-2 border-b border-white/5 mb-1">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">שמירה ושיתוף</p>
                   </div>

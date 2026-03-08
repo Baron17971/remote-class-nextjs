@@ -402,6 +402,12 @@ export default function App() {
   const [sessionGenerations, setSessionGenerations] = useState(0);
   const [filterSubject, setFilterSubject] = useState('');
   const [filterAgeGroup, setFilterAgeGroup] = useState('');
+  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
+
+  const toggleEdit = (phase: string, field: string) => {
+    const key = `${phase}-${field}`;
+    setEditingFields(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const checkSessionQuota = () => {
     if (userProfile?.isUnlimited) return true;
@@ -2100,16 +2106,35 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                   </div>
                 )}
 
-                {/* Activity Editor */}
                 <div className="space-y-4">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest">תיאור הפעילות הנבחרת *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest">תיאור הפעילות הנבחרת *</label>
+                    <button 
+                      onClick={() => toggleEdit(activeTab, 'activity')}
+                      className="text-[10px] font-bold text-lilac-300 hover:text-lilac-400 flex items-center gap-1 transition-all uppercase tracking-wider"
+                    >
+                      {editingFields[`${activeTab}-activity`] ? <><Save size={10} /> שמור תצוגה</> : <><FileEdit size={10} /> ערוך טקסט</>}
+                    </button>
+                  </div>
+                  
                   <div className={`relative border border-white/10 rounded-2xl overflow-hidden transition-all bg-white/5 shadow-sm focus-within:ring-4 focus-within:ring-lilac-400/20 focus-within:border-lilac-400/50`}>
-                    <textarea 
-                      value={(planData as any)[activeTab].activity}
-                      onChange={(e) => handlePlanChange(activeTab, 'activity', e.target.value)}
-                      placeholder="תאר את הפעילות שתתבצע בשלב זה..."
-                      className="w-full p-6 min-h-[160px] outline-none resize-y text-white bg-transparent font-medium text-lg placeholder:text-slate-300"
-                    />
+                    {editingFields[`${activeTab}-activity`] ? (
+                      <textarea 
+                        value={(planData as any)[activeTab].activity}
+                        onChange={(e) => handlePlanChange(activeTab, 'activity', e.target.value)}
+                        placeholder="תאר את הפעילות שתתבצע בשלב זה..."
+                        className="w-full p-6 min-h-[160px] outline-none resize-y text-white bg-transparent font-medium text-lg placeholder:text-slate-300"
+                        autoFocus
+                      />
+                    ) : (
+                      <div 
+                        onClick={() => toggleEdit(activeTab, 'activity')}
+                        className="w-full p-6 min-h-[160px] cursor-pointer hover:bg-white/[0.02] transition-colors"
+                      >
+                        <MarkdownText text={(planData as any)[activeTab].activity} className="text-white font-medium text-lg leading-relaxed" />
+                        {!(planData as any)[activeTab].activity && <span className="text-slate-500 italic">לחץ כאן להוספת תיאור פעילות...</span>}
+                      </div>
+                    )}
                   </div>
                   
                   <div className="mt-4">
@@ -2125,10 +2150,28 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                     {(planData as any)[activeTab].details && (
                       <div className="mt-6 p-8 bg-white/5 border border-white/10 shadow-inner rounded-2xl text-base text-slate-200 leading-relaxed whitespace-pre-wrap relative overflow-hidden font-medium">
                         <div className="absolute top-0 right-0 w-2 h-full bg-lilac-300"></div>
-                        <strong className="block text-white mb-4 flex items-center gap-3 font-serif text-xl">
-                          <MessageCircleQuestion size={24} className="text-lilac-300" /> מדריך לביצוע הפעילות:
-                        </strong>
-                        <MarkdownText text={(planData as any)[activeTab].details} />
+                        <div className="flex items-center justify-between mb-4">
+                          <strong className="text-white flex items-center gap-3 font-serif text-xl">
+                            <MessageCircleQuestion size={24} className="text-lilac-300" /> מדריך לביצוע הפעילות:
+                          </strong>
+                          <button 
+                            onClick={() => toggleEdit(activeTab, 'details')}
+                            className="text-[10px] font-bold text-lilac-300/60 hover:text-lilac-300 flex items-center gap-1 transition-all uppercase tracking-wider"
+                          >
+                            {editingFields[`${activeTab}-details`] ? <><Save size={10} /> שמור</> : <><FileEdit size={10} /> ערוך</>}
+                          </button>
+                        </div>
+                        
+                        {editingFields[`${activeTab}-details`] ? (
+                          <textarea 
+                            value={(planData as any)[activeTab].details}
+                            onChange={(e) => handlePlanChange(activeTab, 'details', e.target.value)}
+                            className="w-full bg-black/20 p-4 rounded-xl border border-white/10 text-white outline-none focus:ring-2 focus:ring-lilac-300/30 min-h-[200px]"
+                            autoFocus
+                          />
+                        ) : (
+                          <MarkdownText text={(planData as any)[activeTab].details} />
+                        )}
                       </div>
                     )}
                   </div>
@@ -2158,25 +2201,58 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                         </button>
                       </div>
                   </div>
-                  <div className="relative border border-white/5 rounded-2xl overflow-hidden transition-all bg-white/[0.02] hover:bg-white/[0.04]">
-                    <textarea 
-                      value={(planData as any)[activeTab].differentiation}
-                      onChange={(e) => handlePlanChange(activeTab, 'differentiation', e.target.value)}
-                      placeholder="הזן כאן הנחיות לדיפרנציאליות (למשל: 'למתקשים - ניתן להשתמש בקידוד צבעים...')"
-                      className="w-full p-5 min-h-[90px] outline-none resize-none text-slate-300 bg-transparent font-medium text-sm italic placeholder:text-slate-500 leading-relaxed"
-                    />
+                  <div className={`relative border border-white/5 rounded-2xl overflow-hidden transition-all bg-white/[0.02] hover:bg-white/[0.04] shadow-sm`}>
+                    {editingFields[`${activeTab}-differentiation`] ? (
+                      <textarea 
+                        value={(planData as any)[activeTab].differentiation}
+                        onChange={(e) => handlePlanChange(activeTab, 'differentiation', e.target.value)}
+                        placeholder="הזן כאן הנחיות לדיפרנציאליות (למשל: 'למתקשים - ניתן להשתמש בקידוד צבעים...')"
+                        className="w-full p-5 min-h-[90px] outline-none resize-none text-slate-300 bg-transparent font-medium text-sm italic placeholder:text-slate-500 leading-relaxed"
+                        autoFocus
+                      />
+                    ) : (
+                      <div 
+                        onClick={() => toggleEdit(activeTab, 'differentiation')}
+                        className="w-full p-5 min-h-[90px] cursor-pointer hover:bg-white/[0.01] transition-colors"
+                      >
+                        <MarkdownText text={(planData as any)[activeTab].differentiation} className="text-slate-300 text-sm font-medium italic leading-relaxed" />
+                        {!(planData as any)[activeTab].differentiation && <span className="text-slate-600 text-xs italic">לחץ כאן להוספת התאמות...</span>}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Tools Editor */}
                 <div className="space-y-4">
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest">כלים טכנולוגיים מומלצים</label>
-                  <input 
-                    value={(planData as any)[activeTab].tools}
-                    onChange={(e) => handlePlanChange(activeTab, 'tools', e.target.value)}
-                    placeholder={(PHASES as any)[activeTab].toolsPlaceholder}
-                    className={`w-full p-4 border border-white/10 rounded-2xl outline-none transition-all bg-black/20 backdrop-blur-md font-medium text-white focus:ring-4 focus:ring-lilac-200/10 focus:border-white/20 shadow-sm`}
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-widest">כלים טכנולוגיים מומלצים</label>
+                    <button 
+                      onClick={() => toggleEdit(activeTab, 'tools')}
+                      className="text-[10px] font-bold text-lilac-300/60 hover:text-lilac-300 flex items-center gap-1 transition-all uppercase tracking-wider"
+                    >
+                      {editingFields[`${activeTab}-tools`] ? <><Save size={10} /> שמור</> : <><FileEdit size={10} /> ערוך</>}
+                    </button>
+                  </div>
+                  
+                  <div className="relative">
+                    {editingFields[`${activeTab}-tools`] ? (
+                      <input 
+                        value={(planData as any)[activeTab].tools}
+                        onChange={(e) => handlePlanChange(activeTab, 'tools', e.target.value)}
+                        placeholder={(PHASES as any)[activeTab].toolsPlaceholder}
+                        className={`w-full p-4 border border-white/10 rounded-2xl outline-none transition-all bg-black/20 backdrop-blur-md font-medium text-white focus:ring-4 focus:ring-lilac-200/10 focus:border-white/20 shadow-sm`}
+                        autoFocus
+                      />
+                    ) : (
+                      <div 
+                        onClick={() => toggleEdit(activeTab, 'tools')}
+                        className="w-full p-4 border border-white/10 rounded-2xl bg-black/20 backdrop-blur-md cursor-pointer hover:bg-black/30 transition-colors"
+                      >
+                         <MarkdownText text={(planData as any)[activeTab].tools} className="text-lilac-200 font-medium" />
+                         {!(planData as any)[activeTab].tools && <span className="text-slate-500 text-sm italic">לחץ כאן להוספת כלים...</span>}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Fixed Ideas Box (fallback) */}
@@ -2295,23 +2371,29 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
             <div className="space-y-5 text-slate-700">
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">מה עושים?</span>
-                <p className="text-lg font-medium">{planData.zria.activity || 'טרם הוזנה פעילות'}</p>
+                <p className="text-lg font-medium">
+                  <MarkdownText text={planData.zria.activity} />
+                </p>
               </div>
               <p className="flex items-center gap-2 font-medium">
                 <span className="text-slate-400">כלים:</span> 
-                <span className="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg text-sm">{planData.zria.tools || '-'}</span>
+                <span className="text-emerald-600 bg-emerald-50 px-3 py-1 rounded-lg text-sm">
+                  <MarkdownText text={planData.zria.tools || '-'} />
+                </span>
               </p>
               
               {planData.zria.differentiation && (
                 <div className="mt-4 pt-4 border-t border-slate-100 italic text-slate-500 bg-slate-50/50 p-4 rounded-xl text-sm leading-relaxed">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">דיפרנציאליות והתאמה:</span>
-                  {planData.zria.differentiation}
+                  <MarkdownText text={planData.zria.differentiation} />
                 </div>
               )}
               {planData.zria.details && (
                 <div className="mt-4 pt-5 border-t border-slate-100">
                   <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">איך מבצעים בפועל?</span>
-                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">{planData.zria.details}</div>
+                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">
+                    <MarkdownText text={planData.zria.details} />
+                  </div>
                 </div>
               )}
             </div>
@@ -2332,23 +2414,29 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
             <div className="space-y-5 text-slate-700">
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">מה עושים?</span>
-                <p className="text-lg font-medium">{planData.katzir.activity || 'טרם הוזנה פעילות'}</p>
+                <p className="text-lg font-medium">
+                  <MarkdownText text={planData.katzir.activity} />
+                </p>
               </div>
               <p className="flex items-center gap-2 font-medium">
                 <span className="text-slate-400">כלים:</span> 
-                <span className="text-purple-600 bg-purple-50 px-3 py-1 rounded-lg text-sm">{planData.katzir.tools || '-'}</span>
+                <span className="text-purple-600 bg-purple-50 px-3 py-1 rounded-lg text-sm">
+                  <MarkdownText text={planData.katzir.tools || '-'} />
+                </span>
               </p>
               
               {planData.katzir.differentiation && (
                 <div className="mt-4 pt-4 border-t border-slate-100 italic text-slate-500 bg-slate-50/50 p-4 rounded-xl text-sm leading-relaxed">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">דיפרנציאליות והתאמה:</span>
-                  {planData.katzir.differentiation}
+                  <MarkdownText text={planData.katzir.differentiation} />
                 </div>
               )}
               {planData.katzir.details && (
                 <div className="mt-4 pt-5 border-t border-slate-100">
                   <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">איך מבצעים בפועל?</span>
-                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">{planData.katzir.details}</div>
+                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">
+                    <MarkdownText text={planData.katzir.details} />
+                  </div>
                 </div>
               )}
             </div>

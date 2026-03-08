@@ -26,6 +26,38 @@ import homeBg from './assets/home_bg.png';
 // Initialize Gemini AI
 const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
+// Helper component to render simple Markdown links [text](url)
+const MarkdownText = ({ text, className = "" }: { text: string; className?: string }) => {
+  if (!text) return null;
+  
+  // Regular expression to match [text](url)
+  const parts = text.split(/(\[.*?\]\(.*?\))/g);
+  
+  return (
+    <span className={className}>
+      {parts.map((part, index) => {
+        const match = part.match(/\[(.*?)\]\((.*?)\)/);
+        if (match) {
+          const [_, linkText, url] = match;
+          return (
+            <a 
+              key={index}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-lilac-300 hover:text-lilac-400 underline decoration-lilac-300/30 underline-offset-4 transition-colors font-bold inline-flex items-center gap-1 mx-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {linkText}
+            </a>
+          );
+        }
+        return part;
+      })}
+    </span>
+  );
+};
+
 const PHASES = {
   harish: {
     id: 'harish',
@@ -2055,7 +2087,9 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                               <div className={`font-semibold text-xs uppercase tracking-widest ${isSelected ? 'text-lilac-300' : 'text-slate-400'}`}>אפשרות {idx + 1}</div>
                               {isSelected ? <CheckCircle2 size={24} className="text-sage-green" /> : <div className="w-6 h-6 rounded-full border border-white/10"></div>}
                             </div>
-                            <p className="text-base text-slate-200 font-medium leading-relaxed mb-6 flex-grow" title={opt.activity}>{opt.activity}</p>
+                            <div className="text-base text-slate-200 font-medium leading-relaxed mb-6 flex-grow">
+                              <MarkdownText text={opt.activity} />
+                            </div>
                             <div className="text-xs text-lilac-300 font-semibold bg-white/10 px-3 py-1.5 rounded-xl inline-flex items-center gap-2 w-fit">
                               <Pointer size={14} /> {opt.tools}
                             </div>
@@ -2094,7 +2128,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                         <strong className="block text-white mb-4 flex items-center gap-3 font-serif text-xl">
                           <MessageCircleQuestion size={24} className="text-lilac-300" /> מדריך לביצוע הפעילות:
                         </strong>
-                        {(planData as any)[activeTab].details}
+                        <MarkdownText text={(planData as any)[activeTab].details} />
                       </div>
                     )}
                   </div>
@@ -2220,7 +2254,9 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
             <div className="space-y-5 flexflex-col text-slate-700">
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                 <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">מה עושים?</span>
-                <p className="text-lg font-medium">{planData.harish.activity || 'טרם הוזנה פעילות'}</p>
+                <div className="text-lg font-medium text-slate-800">
+                  <MarkdownText text={planData.harish.activity} />
+                </div>
               </div>
               <p className="flex items-center gap-2 font-medium">
                 <span className="text-slate-400">כלים:</span> 
@@ -2236,7 +2272,9 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
               {planData.harish.details && (
                 <div className="mt-4 pt-5 border-t border-slate-100">
                   <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">איך מבצעים בפועל?</span>
-                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">{planData.harish.details}</div>
+                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">
+                    <MarkdownText text={planData.harish.details} />
+                  </div>
                 </div>
               )}
             </div>

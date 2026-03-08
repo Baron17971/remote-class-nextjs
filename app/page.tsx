@@ -2266,7 +2266,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
               {planData.harish.differentiation && (
                 <div className="mt-4 pt-4 border-t border-slate-100 italic text-slate-500 bg-slate-50/50 p-4 rounded-xl text-sm leading-relaxed">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">דיפרנציאליות והתאמה:</span>
-                  <MarkdownText text={planData.harish.differentiation} />
+                  {planData.harish.differentiation}
                 </div>
               )}
               {planData.harish.details && (
@@ -2305,7 +2305,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
               {planData.zria.differentiation && (
                 <div className="mt-4 pt-4 border-t border-slate-100 italic text-slate-500 bg-slate-50/50 p-4 rounded-xl text-sm leading-relaxed">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">דיפרנציאליות והתאמה:</span>
-                  <MarkdownText text={planData.zria.differentiation} />
+                  {planData.zria.differentiation}
                 </div>
               )}
               {planData.zria.details && (
@@ -2342,15 +2342,13 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
               {planData.katzir.differentiation && (
                 <div className="mt-4 pt-4 border-t border-slate-100 italic text-slate-500 bg-slate-50/50 p-4 rounded-xl text-sm leading-relaxed">
                   <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">דיפרנציאליות והתאמה:</span>
-                  <MarkdownText text={planData.katzir.differentiation} />
+                  {planData.katzir.differentiation}
                 </div>
               )}
               {planData.katzir.details && (
                 <div className="mt-4 pt-5 border-t border-slate-100">
                   <span className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">איך מבצעים בפועל?</span>
-                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">
-                    <MarkdownText text={planData.katzir.details} />
-                  </div>
+                  <div className="whitespace-pre-wrap leading-relaxed text-slate-600">{planData.katzir.details}</div>
                 </div>
               )}
             </div>

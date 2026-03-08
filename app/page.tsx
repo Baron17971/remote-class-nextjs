@@ -368,6 +368,8 @@ export default function App() {
   const [isPedagogyModalOpen, setIsPedagogyModalOpen] = useState(false);
   const [unsharingPlanId, setUnsharingPlanId] = useState<string | null>(null);
   const [sessionGenerations, setSessionGenerations] = useState(0);
+  const [filterSubject, setFilterSubject] = useState('');
+  const [filterAgeGroup, setFilterAgeGroup] = useState('');
 
   const checkSessionQuota = () => {
     if (userProfile?.isUnlimited) return true;
@@ -2406,7 +2408,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                 </div>
                 <h2 className="text-3xl font-serif font-bold text-white">מאגר המערכים</h2>
               </div>
-              <button onClick={() => setIsSavedPlansModalOpen(false)} className="p-3 hover:bg-white/10 rounded-full transition-all text-slate-300 border border-white/5 hover:border-white/20">
+              <button onClick={() => { setIsSavedPlansModalOpen(false); setFilterSubject(''); setFilterAgeGroup(''); }} className="p-3 hover:bg-white/10 rounded-full transition-all text-slate-300 border border-white/5 hover:border-white/20">
                 <X size={28} />
               </button>
             </div>
@@ -2427,6 +2429,32 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
               </button>
             </div>
 
+            {/* Filters */}
+            <div className="flex gap-4 px-8 mt-4">
+              <select 
+                value={filterSubject} 
+                onChange={(e) => setFilterSubject(e.target.value)}
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-lilac-400 transition-all appearance-none"
+              >
+                <option value="" className="bg-slate-800 text-slate-300">כל המקצועות</option>
+                {SUBJECTS.map(subj => <option key={subj} value={subj} className="bg-slate-800 text-white">{subj}</option>)}
+              </select>
+              <select 
+                value={filterAgeGroup} 
+                onChange={(e) => setFilterAgeGroup(e.target.value)}
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-lilac-400 transition-all appearance-none"
+              >
+                <option value="" className="bg-slate-800 text-slate-300">כל הכיתות</option>
+                <option value="גן חובה" className="bg-slate-800 text-white">גן חובה</option>
+                <option value="כיתות א'-ג'" className="bg-slate-800 text-white">כיתות א'-ג'</option>
+                <option value="כיתות ד'-ו'" className="bg-slate-800 text-white">כיתות ד'-ו'</option>
+                <option value="חטיבת ביניים (ז'-ט')" className="bg-slate-800 text-white">חטיבת ביניים (ז'-ט')</option>
+                <option value="חטיבה עליונה (י'-יב')" className="bg-slate-800 text-white">חטיבה עליונה (י'-יב')</option>
+                <option value="חינוך מיוחד" className="bg-slate-800 text-white">חינוך מיוחד</option>
+                <option value="אחר" className="bg-slate-800 text-white">אחר</option>
+              </select>
+            </div>
+
             <div className="p-8 overflow-y-auto flex-1 bg-transparent custom-scrollbar">
               {isPlansLoading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -2435,15 +2463,25 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                 </div>
               ) : (
                 <>
-                  {savedPlans.filter(p => plansTab === 'mine' ? p.user_id === userProfile?.id : p.is_public).length === 0 ? (
+                  {savedPlans.filter(p => {
+                    const isTabMatch = plansTab === 'mine' ? p.user_id === userProfile?.id : p.is_public;
+                    const isSubjectMatch = filterSubject ? p.lessonDetails.subject === filterSubject : true;
+                    const isAgeGroupMatch = filterAgeGroup ? p.lessonDetails.ageGroup === filterAgeGroup : true;
+                    return isTabMatch && isSubjectMatch && isAgeGroupMatch;
+                  }).length === 0 ? (
                     <div className="text-center py-20 text-slate-500">
                       <FolderOpen size={64} className="mx-auto mb-6 opacity-10" />
-                      <p className="text-lg font-medium">{plansTab === 'mine' ? 'עדיין לא שמרת מערכים משלך.' : 'אין עדיין מערכים ציבוריים בקהילה.'}</p>
-                      {plansTab === 'mine' && <p className="text-sm opacity-60 mt-2">צרו מערך ושמרו אותו כדי לראות אותו כאן.</p>}
+                      <p className="text-lg font-medium">{plansTab === 'mine' ? 'לא נמצאו מערכים התואמים לחיפוש.' : 'לא נמצאו מערכים ציבוריים התואמים לחיפוש.'}</p>
+                      {plansTab === 'mine' && <p className="text-sm opacity-60 mt-2">נסו לשנות את אפשרויות הסינון.</p>}
                     </div>
                   ) : (
                     <div className="grid gap-3">
-                      {savedPlans.filter(p => plansTab === 'mine' ? p.user_id === userProfile?.id : p.is_public).map(plan => (
+                      {savedPlans.filter(p => {
+                        const isTabMatch = plansTab === 'mine' ? p.user_id === userProfile?.id : p.is_public;
+                        const isSubjectMatch = filterSubject ? p.lessonDetails.subject === filterSubject : true;
+                        const isAgeGroupMatch = filterAgeGroup ? p.lessonDetails.ageGroup === filterAgeGroup : true;
+                        return isTabMatch && isSubjectMatch && isAgeGroupMatch;
+                      }).map(plan => (
                         <div key={plan.id} onClick={() => loadPlan(plan)} className="relative group bg-white/5 p-4 rounded-[1.6rem] border border-white/10 hover:border-lilac-400 shadow-sm hover:shadow-2xl hover:shadow-lilac-500/10 cursor-pointer transition-all flex justify-between items-center overflow-hidden">
                           {plan.is_public && plansTab === 'mine' && (
                             <div className="absolute top-0 left-0 bg-sage-green/20 text-white px-3 py-1 rounded-br-2xl text-[10px] font-bold border-b border-r border-sage-green/20">

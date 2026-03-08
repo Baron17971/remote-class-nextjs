@@ -369,7 +369,7 @@ export default function App() {
 
   const checkSessionQuota = () => {
     if (userProfile?.isUnlimited) return true;
-    return sessionGenerations < 5;
+    return sessionGenerations < 10;
   };
 
   const incrementSessionQuota = () => {
@@ -714,7 +714,7 @@ export default function App() {
     }
 
     if (!checkSessionQuota()) {
-      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setErrorMsg('הגעת למכסה של 10 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
       setTimeout(() => setErrorMsg(''), 6000);
       return;
     }
@@ -794,7 +794,7 @@ export default function App() {
     }
 
     if (!checkSessionQuota()) {
-      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setErrorMsg('הגעת למכסה של 10 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
       setTimeout(() => setErrorMsg(''), 6000);
       return;
     }
@@ -860,7 +860,7 @@ export default function App() {
 
   const generateActivityDetailsAI = async (phaseId: string) => {
     if (!checkSessionQuota()) {
-      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setErrorMsg('הגעת למכסה של 10 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
       setTimeout(() => setErrorMsg(''), 6000);
       return;
     }
@@ -908,7 +908,7 @@ export default function App() {
 
   const generateDifferentiationAI = async (phaseId: string) => {
     if (!checkSessionQuota()) {
-      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setErrorMsg('הגעת למכסה של 10 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
       setTimeout(() => setErrorMsg(''), 6000);
       return;
     }
@@ -986,7 +986,7 @@ export default function App() {
   // ייצור מצגת PowerPoint (PPTX) אמתית
   const generateSlideConceptsAI = async () => {
     if (!checkSessionQuota()) {
-      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setErrorMsg('הגעת למכסה של 10 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
       setTimeout(() => setErrorMsg(''), 6000);
       return;
     }
@@ -1024,7 +1024,7 @@ export default function App() {
 
   const generatePresentationPptx = async () => {
     if (!checkSessionQuota()) {
-      setErrorMsg('הגעת למכסה של 5 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
+      setErrorMsg('הגעת למכסה של 10 בנייות או שינויי AI בשיעור זה. לגישה ללא הגבלה, הזינו קוד הטבה בפרופיל המורה.');
       setTimeout(() => setErrorMsg(''), 6000);
       return;
     }

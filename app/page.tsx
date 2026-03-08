@@ -1469,6 +1469,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                       if (msg.includes('Invalid login credentials')) setAuthError('אימייל או סיסמה שגויים');
                       else if (msg.includes('User already registered')) setAuthError('משתמש עם אימייל זה כבר קיים');
                       else if (msg.includes('Password should be at least')) setAuthError('הסיסמה חייבת להכיל לפחות 6 תווים');
+                      else if (msg.includes('email rate limit exceeded')) setAuthError('חרגת מגבול ניסיונות המייל. נא להמתין כ-15 דקות ולנסות שוב.');
                       else setAuthError(msg || 'אירעה שגיאה, נסה שוב');
                     } finally {
                       setAuthLoading(false);

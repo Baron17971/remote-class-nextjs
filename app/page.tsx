@@ -2445,11 +2445,7 @@ ${planData.katzir.details ? `\\\\ \\\\ \\textbf{הסבר מפורט:}\\\\ ${esca
                 className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm font-bold text-white outline-none focus:border-lilac-400 transition-all appearance-none"
               >
                 <option value="" className="bg-slate-800 text-slate-300">כל הכיתות</option>
-                <option value="גן חובה" className="bg-slate-800 text-white">גן חובה</option>
-                <option value="כיתות א'-ג'" className="bg-slate-800 text-white">כיתות א'-ג'</option>
-                <option value="כיתות ד'-ו'" className="bg-slate-800 text-white">כיתות ד'-ו'</option>
-                <option value="חטיבת ביניים (ז'-ט')" className="bg-slate-800 text-white">חטיבת ביניים (ז'-ט')</option>
-                <option value="חטיבה עליונה (י'-יב')" className="bg-slate-800 text-white">חטיבה עליונה (י'-יב')</option>
+                {GRADES.map(grade => <option key={grade} value={grade} className="bg-slate-800 text-white">{grade}</option>)}
                 <option value="חינוך מיוחד" className="bg-slate-800 text-white">חינוך מיוחד</option>
                 <option value="אחר" className="bg-slate-800 text-white">אחר</option>
               </select>

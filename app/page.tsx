@@ -751,7 +751,7 @@ export default function App() {
       }
 
       const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash",
+        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
         contents: promptText,
         config: {
           responseMimeType: "application/json",
@@ -826,7 +826,7 @@ export default function App() {
 
     try {
       const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash",
+        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
         contents: promptText,
         config: {
           responseMimeType: "application/json",
@@ -888,7 +888,7 @@ export default function App() {
 
     try {
       const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash",
+        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
         contents: promptText,
         config: {
           responseMimeType: "application/json",
@@ -938,7 +938,7 @@ export default function App() {
 
     try {
       const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash",
+        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
         contents: promptText,
         config: {
           responseMimeType: "application/json",
@@ -1006,7 +1006,7 @@ export default function App() {
         החזר את המושגים כרשימה מופרדת בפסיקים בלבד, ללא מספור וללא הקדמות. כתוב בעברית.`;
 
       const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash",
+        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
         contents: prompt,
       });
 
@@ -1068,7 +1068,7 @@ export default function App() {
 
     try {
       const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash",
+        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
         contents: promptText,
         config: {
           responseMimeType: "application/json",

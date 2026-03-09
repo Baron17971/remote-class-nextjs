@@ -15,8 +15,10 @@ View your app in AI Studio: https://ai.studio/apps/ec6e42bf-5128-44f5-9cca-e1539
 
 1. Install dependencies:
    `npm install`
-2. Set `NEXT_PUBLIC_GEMINI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in [.env.local](.env.local)
-3. Run the app:
+2. Set `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION`, `NEXT_PUBLIC_SUPABASE_URL`, and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in [.env.local](.env.local)
+3. Authenticate to Google Cloud for Vertex AI (for local dev), for example:
+   `gcloud auth application-default login`
+4. Run the app:
    `npm run dev`
 
 ## Supabase Setup (Correct Structure)

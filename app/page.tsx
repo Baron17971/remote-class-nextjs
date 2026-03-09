@@ -7,7 +7,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Sprout, BookOpen, Wheat, Sparkles, Download, FileEdit, CheckCircle2, AlertCircle, Loader2, PlusCircle, Pointer, MessageCircleQuestion, Presentation, Upload, FileText, FileCode, FileDown, Layout, ArrowLeft, ArrowRight, Save, FolderOpen, Trash2, X, User, Users, Lock, LogOut, Settings, KeyRound, Settings2, ChevronDown, ChevronUp, Cpu, Network, Clock, Rocket } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
@@ -23,8 +22,42 @@ import {
 } from './lib/supabaseRest';
 import homeBg from './assets/home_bg.png';
 
-// Initialize Gemini AI
-const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
+const DEFAULT_GEMINI_MODEL = process.env.NEXT_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+
+type GenerateContentFromServerRequest = {
+  prompt: string;
+  model?: string;
+  config?: Record<string, unknown>;
+};
+
+const generateContentFromServer = async ({
+  prompt,
+  model,
+  config,
+}: GenerateContentFromServerRequest): Promise<string> => {
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt,
+      ...(model ? { model } : {}),
+      ...(config ? { config } : {}),
+    }),
+  });
+
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const errorMessage =
+      typeof payload?.error === 'string' ? payload.error : `HTTP ${response.status}`;
+    throw new Error(errorMessage);
+  }
+
+  if (typeof payload?.text !== 'string') {
+    throw new Error('לא התקבלה תשובה מה-AI.');
+  }
+
+  return payload.text;
+};
 
 // Helper component to render simple Markdown links [text](url)
 const MarkdownText = ({ text, className = "" }: { text: string; className?: string }) => {
@@ -793,28 +826,23 @@ export default function App() {
       החזר בפורמט JSON בלבד. כתוב בטקסט פשוט בלבד ללא תגיות HTML בשום צורה.`;
 
     try {
-      if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-        throw new Error("מפתח API חסר. אנא ודא שהגדרת את NEXT_PUBLIC_GEMINI_API_KEY.");
-      }
-
-      const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
-        contents: promptText,
+      const jsonText = await generateContentFromServer({
+        model: DEFAULT_GEMINI_MODEL,
+        prompt: promptText,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: Type.OBJECT,
+            type: "OBJECT",
             properties: {
-              harish: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { activity: { type: Type.STRING }, tools: { type: Type.STRING } } } },
-              zria: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { activity: { type: Type.STRING }, tools: { type: Type.STRING } } } },
-              katzir: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { activity: { type: Type.STRING }, tools: { type: Type.STRING } } } }
+              harish: { type: "ARRAY", items: { type: "OBJECT", properties: { activity: { type: "STRING" }, tools: { type: "STRING" } } } },
+              zria: { type: "ARRAY", items: { type: "OBJECT", properties: { activity: { type: "STRING" }, tools: { type: "STRING" } } } },
+              katzir: { type: "ARRAY", items: { type: "OBJECT", properties: { activity: { type: "STRING" }, tools: { type: "STRING" } } } }
             },
             required: ["harish", "zria", "katzir"]
           }
         }
       });
 
-      const jsonText = response.text;
       if (jsonText) {
         const generatedData = JSON.parse(jsonText);
         setPlanData({
@@ -878,20 +906,19 @@ export default function App() {
       החזר בפורמט JSON בלבד (מערך של options). כתוב בטקסט פשוט בלבד ללא תגיות HTML בשום צורה.`;
 
     try {
-      const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
-        contents: promptText,
+      const jsonText = await generateContentFromServer({
+        model: DEFAULT_GEMINI_MODEL,
+        prompt: promptText,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: Type.OBJECT,
-            properties: { options: { type: Type.ARRAY, items: { type: Type.OBJECT, properties: { activity: { type: Type.STRING }, tools: { type: Type.STRING }, differentiation: { type: Type.STRING } } } } },
+            type: "OBJECT",
+            properties: { options: { type: "ARRAY", items: { type: "OBJECT", properties: { activity: { type: "STRING" }, tools: { type: "STRING" }, differentiation: { type: "STRING" } } } } },
             required: ["options"]
           }
         }
       });
 
-      const jsonText = response.text;
       if (jsonText) {
         const generatedData = JSON.parse(jsonText);
         const newOptions = (generatedData.options || []).map((s) => ({...s, differentiation: s.differentiation || ''}));
@@ -944,16 +971,15 @@ export default function App() {
       בלי הקדמות וסיכומים, ובלי תגיות HTML בכלל. החזר את התשובה בפורמט JSON בשדה "details".`;
 
     try {
-      const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
-        contents: promptText,
+      const jsonText = await generateContentFromServer({
+        model: DEFAULT_GEMINI_MODEL,
+        prompt: promptText,
         config: {
           responseMimeType: "application/json",
-          responseSchema: { type: Type.OBJECT, properties: { details: { type: Type.STRING } }, required: ["details"] }
+          responseSchema: { type: "OBJECT", properties: { details: { type: "STRING" } }, required: ["details"] }
         }
       });
 
-      const jsonText = response.text;
       if (jsonText) {
         const generatedData = JSON.parse(jsonText);
         handlePlanChange(phaseId, 'details', generatedData.details);
@@ -995,16 +1021,15 @@ export default function App() {
       כתוב בטקסט פשוט, קולח ומקצועי, ללא כותרות, ללא מספור וללא תגיות HTML. החזר בפורמט JSON בשדה "differentiation".`;
 
     try {
-      const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
-        contents: promptText,
+      const jsonText = await generateContentFromServer({
+        model: DEFAULT_GEMINI_MODEL,
+        prompt: promptText,
         config: {
           responseMimeType: "application/json",
-          responseSchema: { type: Type.OBJECT, properties: { differentiation: { type: Type.STRING } }, required: ["differentiation"] }
+          responseSchema: { type: "OBJECT", properties: { differentiation: { type: "STRING" } }, required: ["differentiation"] }
         }
       });
 
-      const jsonText = response.text;
       if (jsonText) {
         const generatedData = JSON.parse(jsonText);
         handlePlanChange(phaseId, 'differentiation', generatedData.differentiation);
@@ -1063,12 +1088,12 @@ export default function App() {
         נושא: ${lessonDetails.topic} | מקצוע: ${lessonDetails.subject} | כיתה: ${lessonDetails.ageGroup}
         החזר את המושגים כרשימה מופרדת בפסיקים בלבד, ללא מספור וללא הקדמות. כתוב בעברית.`;
 
-      const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
-        contents: prompt,
-      });
-
-      const concepts = response.text?.trim();
+      const concepts = (
+        await generateContentFromServer({
+          model: DEFAULT_GEMINI_MODEL,
+          prompt,
+        })
+      )?.trim();
       if (concepts) {
         setLessonDetails(prev => ({
           ...prev,
@@ -1125,18 +1150,18 @@ export default function App() {
       2. content: מערך של 3-4 נקודות קצרות שיופיעו בשקף.`;
 
     try {
-      const response = await genAI.models.generateContent({
-        model: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-3-flash-preview",
-        contents: promptText,
+      const jsonText = await generateContentFromServer({
+        model: DEFAULT_GEMINI_MODEL,
+        prompt: promptText,
         config: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: Type.ARRAY,
+            type: "ARRAY",
             items: {
-              type: Type.OBJECT,
+              type: "OBJECT",
               properties: {
-                title: { type: Type.STRING },
-                content: { type: Type.ARRAY, items: { type: Type.STRING } }
+                title: { type: "STRING" },
+                content: { type: "ARRAY", items: { type: "STRING" } }
               },
               required: ["title", "content"]
             }
@@ -1144,7 +1169,6 @@ export default function App() {
         }
       });
 
-      const jsonText = response.text;
       if (jsonText) {
         const slidesData = JSON.parse(jsonText);
         

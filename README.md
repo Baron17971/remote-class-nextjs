@@ -21,6 +21,8 @@ View your app in AI Studio: https://ai.studio/apps/ec6e42bf-5128-44f5-9cca-e1539
 4. Run the app:
    `npm run dev`
 
+For full step-by-step setup on a new machine, see [`LOCAL_VERTEX_AI_SETUP.md`](LOCAL_VERTEX_AI_SETUP.md).
+
 ## Vertex AI Authentication
 
 This app now uses Vertex AI only (server-side). No Gemini Developer API key is required.

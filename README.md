@@ -21,6 +21,24 @@ View your app in AI Studio: https://ai.studio/apps/ec6e42bf-5128-44f5-9cca-e1539
 4. Run the app:
    `npm run dev`
 
+## Vertex AI Authentication
+
+This app now uses Vertex AI only (server-side). No Gemini Developer API key is required.
+
+- Local development: uses Google Application Default Credentials (ADC) automatically.
+- Vercel preview/production: uses Vercel OIDC + Google Workload Identity Federation.
+
+Required Vercel environment variables:
+
+- `GOOGLE_CLOUD_PROJECT`
+- `GOOGLE_CLOUD_LOCATION`
+- `GOOGLE_GENAI_USE_VERTEXAI=true`
+- `GCP_PROJECT_ID`
+- `GCP_PROJECT_NUMBER`
+- `GCP_SERVICE_ACCOUNT_EMAIL`
+- `GCP_WORKLOAD_IDENTITY_POOL_ID`
+- `GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID`
+
 ## Supabase Setup (Correct Structure)
 
 This repo now includes a real Supabase project structure:

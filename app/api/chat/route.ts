@@ -1,6 +1,8 @@
-import { GoogleGenAI } from '@google/genai';
+import { createVertexAIClient } from '../../lib/vertexAiClient';
 
-const DEFAULT_MODEL = process.env.GEMINI_MODEL || process.env.NEXT_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
+export const runtime = 'nodejs';
+
+const DEFAULT_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
 type ChatRequestBody = {
   prompt?: unknown;
@@ -17,16 +19,7 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Missing prompt' }, { status: 400 });
     }
 
-    const project = process.env.GOOGLE_CLOUD_PROJECT;
-    if (!project) {
-      return Response.json({ error: 'Missing GOOGLE_CLOUD_PROJECT' }, { status: 500 });
-    }
-
-    const ai = new GoogleGenAI({
-      vertexai: true,
-      project,
-      location: process.env.GOOGLE_CLOUD_LOCATION || 'global',
-    });
+    const ai = createVertexAIClient();
 
     const model = typeof body.model === 'string' && body.model.trim() ? body.model : DEFAULT_MODEL;
     const config =
@@ -43,6 +36,7 @@ export async function POST(req: Request) {
     return Response.json({ text: response.text ?? '' });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unexpected error while calling Vertex AI';
+    console.error('[api/chat] Vertex AI error:', error instanceof Error ? error.message : error);
     return Response.json({ error: message }, { status: 500 });
   }
 }
